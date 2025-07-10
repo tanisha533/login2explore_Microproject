@@ -1,5 +1,5 @@
 # login2explore_Microproject
-# 👩‍🎓 Student Enrollment Form using JsonPowerDB
+Student Enrollment Form using JsonPowerDB
 
 ## 📌 What’s this project about?
 
