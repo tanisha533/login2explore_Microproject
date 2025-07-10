@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Student Enrollment</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body onload="resetForm()">
+
+  <h2>Student Enrollment Form</h2>
+
+  <form id="studentForm">
+    <label>Roll No:</label>
+    <input type="text" id="rollNo" onblur="checkRollNo()" autofocus><br><br>
+
+    <label>Full Name:</label>
+    <input type="text" id="fullName" disabled><br><br>
+
+    <label>Class:</label>
+    <input type="text" id="studentClass" disabled><br><br>
+
+    <label>Birth Date:</label>
+    <input type="date" id="birthDate" disabled><br><br>
+
+    <label>Address:</label>
+    <input type="text" id="address" disabled><br><br>
+
+    <label>Enrollment Date:</label>
+    <input type="date" id="enrollmentDate" disabled><br><br>
+
+    <button type="button" id="saveBtn" onclick="saveStudent()" disabled>Save</button>
+    <button type="button" id="updateBtn" onclick="updateStudent()" disabled>Update</button>
+    <button type="button" onclick="resetForm()">Reset</button>
+  </form>
+
+  <!-- 🔧 Helper Functions for JPDB -->
+  <script>
+    const token = "90934992|-31949210644292426|90959249";
+    const dbName = "SCHOOL2-DB";
+    const relName = "STUDENT-TABLE-NEW";
+    const baseURL = "http://api.login2explore.com:5577";
+
+    function createGET_BY_KEYRequest(token, dbName, relName, keyJson) {
+      return JSON.stringify({
+        token: token,
+        cmd: "GET_BY_KEY",
+        dbName: dbName,
+        rel: relName,
+        jsonStr: keyJson
+      });
+    }
+
+    function createPUTRequest(token, jsonObj, dbName, relName) {
+      return JSON.stringify({
+        token: token,
+        cmd: "PUT",
+        dbName: dbName,
+        rel: relName,
+        jsonStr: jsonObj
+      });
+    }
+
+    function createUPDATERecordRequest(token, jsonObj, dbName, relName, primaryKey) {
+      return JSON.stringify({
+        token: token,
+        cmd: "UPDATE",
+        dbName: dbName,
+        rel: relName,
+        primaryKey: primaryKey,
+        jsonStr: jsonObj
+      });
+    }
+
+    function executeCommandAtGivenBaseUrl(requestStr, baseUrl, apiEndPointUrl) {
+      let url = baseUrl + apiEndPointUrl;
+      let result = "";
+      $.ajax({
+        type: "POST",
+        url: url,
+        data: requestStr,
+        contentType: "application/json",
+        async: false,
+        success: function (res) {
+          result = res;
+        },
+        error: function (err) {
+          alert("Request failed: " + err.responseText);
+        }
+      });
+      return result;
+    }
+
+    function disableForm(disableAll = true) {
+      const ids = ['fullName', 'studentClass', 'birthDate', 'address', 'enrollmentDate'];
+      ids.forEach(id => document.getElementById(id).disabled = disableAll);
+      document.getElementById('saveBtn').disabled = true;
+      document.getElementById('updateBtn').disabled = true;
+    }
+
+    function resetForm() {
+      document.getElementById("studentForm").reset();
+      document.getElementById("rollNo").disabled = false;
+      document.getElementById("rollNo").focus();
+      disableForm(true);
+    }
+
+    function validateFields() {
+      let fields = ['rollNo', 'fullName', 'studentClass', 'birthDate', 'address', 'enrollmentDate'];
+      for (let field of fields) {
+        if (document.getElementById(field).value.trim() === '') {
+          alert("Please fill all fields.");
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function checkRollNo() {
+      const rollNo = document.getElementById("rollNo").value.trim();
+      if (!rollNo) return;
+
+      const getByKeyReq = createGET_BY_KEYRequest(token, dbName, relName, JSON.stringify({ rollNo }));
+      jQuery.ajaxSetup({ async: false });
+      const res = executeCommandAtGivenBaseUrl(getByKeyReq, baseURL, "/api/irl");
+      jQuery.ajaxSetup({ async: true });
+
+      if (res && res.data) {
+        fillForm(res.data.record);
+        document.getElementById("rollNo").disabled = true;
+        disableForm(false);
+        document.getElementById("saveBtn").disabled = true;
+        document.getElementById("updateBtn").disabled = false;
+      } else {
+        disableForm(false);
+        document.getElementById("saveBtn").disabled = false;
+        document.getElementById("updateBtn").disabled = true;
+        document.getElementById("fullName").focus();
+      }
+    }
+
+    function fillForm(record) {
+      document.getElementById("fullName").value = record.fullName;
+      document.getElementById("studentClass").value = record.studentClass;
+      document.getElementById("birthDate").value = record.birthDate;
+      document.getElementById("address").value = record.address;
+      document.getElementById("enrollmentDate").value = record.enrollDate;
+    }
+
+    function getFormData() {
+      return {
+        rollNo: document.getElementById("rollNo").value.trim(),
+        fullName: document.getElementById("fullName").value.trim(),
+        studentClass: document.getElementById("studentClass").value.trim(),
+        birthDate: document.getElementById("birthDate").value,
+        address: document.getElementById("address").value.trim(),
+        enrollDate: document.getElementById("enrollmentDate").value
+      };
+    }
+
+    function saveStudent() {
+      if (!validateFields()) return;
+
+      const data = getFormData();
+      const putReq = createPUTRequest(token, JSON.stringify(data), dbName, relName);
+      jQuery.ajaxSetup({ async: false });
+      const res = executeCommandAtGivenBaseUrl(putReq, baseURL, "/api/iml");
+      jQuery.ajaxSetup({ async: true });
+      alert("Record saved successfully!");
+      resetForm();
+    }
+
+    function updateStudent() {
+      if (!validateFields()) return;
+
+      const data = getFormData();
+      const updateReq = createUPDATERecordRequest(token, JSON.stringify(data), dbName, relName, "rollNo");
+      jQuery.ajaxSetup({ async: false });
+      const res = executeCommandAtGivenBaseUrl(updateReq, baseURL, "/api/iml");
+      jQuery.ajaxSetup({ async: true });
+      alert("Record updated successfully!");
+      resetForm();
+    }
+  </script>
+</body>
+</html>
